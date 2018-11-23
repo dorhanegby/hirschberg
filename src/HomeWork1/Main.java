@@ -8,12 +8,80 @@ public class Main {
 
     public static void main(String[] args) {
         // write your code here
-        String x = "GGTTAGAAA";
-        String y = "CCTAAGAA";
+        String x = "TGTAAATT";
+        String y = "GGTCATTTA";
 
-        String[] a = hirschberg(x, y);
-        String[] b = needlemanWunch(x, y);
+        Pair<Integer, Integer>[] indices = findStartAndEndIndices(x, y);
+        int xStart = indices[0].getKey();
+        int xEnd = indices[1].getKey();
+        int yStart = indices[0].getValue();
+        int yEnd = indices[1].getValue();
+        String[] a = hirschberg(x.substring(xStart, xEnd), y.substring(yStart, yEnd));
+//        String[] b = needlemanWunch(x, y);
+        System.out.println();
     }
+
+
+    public static Pair<Integer, Integer>[] findStartAndEndIndices(String x, String y) {
+
+        int columns = y.length() + 1;
+        int rows = x.length() + 1;
+
+        Pair<Integer, Integer> endIndex = new Pair<>(0, 0);
+        double maxValue = -Double.MAX_VALUE;
+        Pair<Integer, Integer> maxStartingPoint = new Pair<>(0, 0);
+
+        double[][] lastTwoRows = new double[2][columns];
+        Pair<Integer, Integer>[][] startingPoints = new Pair[2][columns];
+
+        lastTwoRows[0][0] = 0;
+
+        for (int i = 1; i < columns; i++) {
+            lastTwoRows[0][i] = 0;
+            startingPoints[0][i] = new Pair<>(0, i);
+        }
+
+        for (int i = 1; i < rows; i++) {
+            lastTwoRows[1][0] = 0;
+            for (int j = 1; j < columns; j++) {
+                char xChar = x.charAt(i - 1);
+                char yChar = y.charAt(j - 1);
+                double mScore = lastTwoRows[0][j - 1] + scoringFunction(xChar, yChar);
+                double xAndIndel = lastTwoRows[0][j] + scoringFunction(xChar, INDEL);
+                double yAndIndel = lastTwoRows[1][j - 1] + scoringFunction(yChar, INDEL);
+
+                if (mScore >= 0 && mScore >= xAndIndel && mScore >= yAndIndel) {
+                    lastTwoRows[1][j] = mScore;
+                    startingPoints[1][j] = startingPoints[0][j-1];
+
+                } else if (xAndIndel  >= 0 && xAndIndel > mScore && xAndIndel > yAndIndel) {
+                    lastTwoRows[1][j] = xAndIndel;
+                    startingPoints[1][j] = startingPoints[0][j];
+                } else if(yAndIndel >= 0) {
+                    lastTwoRows[1][j] = yAndIndel;
+                    startingPoints[1][j] = startingPoints[1][j - 1];
+                }else {
+                    lastTwoRows[1][j] = 0;
+                    startingPoints[1][j] = new Pair<>(i, j);
+                }
+
+                if(lastTwoRows[1][j] > maxValue) {
+                    endIndex = new Pair<>(i, j);
+                    maxValue = lastTwoRows[1][j];
+                    maxStartingPoint = new Pair<>(startingPoints[1][j].getKey(), startingPoints[1][j].getValue());
+                }
+
+            }
+            lastTwoRows[0] = lastTwoRows[1].clone();
+            startingPoints[0] = startingPoints[1].clone();
+        }
+
+        Pair<Integer, Integer>[] answer = new Pair[2];
+        answer[0] = maxStartingPoint;
+        answer[1] = endIndex;
+        return answer;
+    }
+
 
 
     /**
@@ -47,7 +115,6 @@ public class Main {
                 lastTwoRows[1][j] = max(mScore, xAndIndel, yAndIndel);
             }
             lastTwoRows[0] = lastTwoRows[1].clone();
-            System.out.println();
 
         }
 
