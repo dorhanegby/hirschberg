@@ -9,18 +9,19 @@ public class Main {
     private static double maxScore;
     private static boolean firstRun = true;
 
+    private static int matrixCounter = 0;
+
     public static void main(String[] args) {
         // write your code here
         String x = "ATAAGGCATTGACCGTATTGCCAA";
         String y = "CCCATAGGTGCGGTAGCC";
 
         // Global
-
         String[] global = hirschberg(x, y);
         printSequence(global);
 
         // Local
-
+        matrixCounter = 0;
         Pair<Integer, Integer>[] indices = findStartAndEndIndices(x, y);
         int xStart = indices[0].getKey();
         int xEnd = indices[1].getKey();
@@ -29,6 +30,13 @@ public class Main {
 
         String[] local = hirschberg(x.substring(xStart, xEnd), y.substring(yStart, yEnd));
         printSequence(local);
+
+        // Explanation
+        System.out.println(
+                "\nGlobal: We can see that the first result is about twice the size of the input (a little more)"
+                        + "which corresponds to the hidden constant in O(n*m)");
+        System.out.println("\nLocal: in the local alignment we compute a lot less cells when we find the substrings"
+                + "corresponds with the result but looking for the start and end values is a consuming operation as well.");
     }
 
     private static void printSequence(String[] global) {
@@ -36,6 +44,7 @@ public class Main {
             System.out.println(global[i]);
         }
         System.out.println("Score: " + maxScore);
+        System.out.println("Total number of matrix cells computed: " + matrixCounter);
     }
 
     public static Pair<Integer, Integer>[] findStartAndEndIndices(String x, String y) {
@@ -51,14 +60,17 @@ public class Main {
         Pair<Integer, Integer>[][] startingPoints = new Pair[2][columns];
 
         lastTwoRows[0][0] = 0;
+        matrixCounter++;
 
         for (int i = 1; i < columns; i++) {
             lastTwoRows[0][i] = 0;
             startingPoints[0][i] = new Pair<>(0, i);
+            matrixCounter++;
         }
 
         for (int i = 1; i < rows; i++) {
             lastTwoRows[1][0] = 0;
+            matrixCounter++;
             for (int j = 1; j < columns; j++) {
                 char xChar = x.charAt(i - 1);
                 char yChar = y.charAt(j - 1);
@@ -86,6 +98,7 @@ public class Main {
                     maxValue = lastTwoRows[1][j];
                     maxStartingPoint = new Pair<>(startingPoints[1][j].getKey(), startingPoints[1][j].getValue());
                 }
+                matrixCounter++;
 
             }
             lastTwoRows[0] = lastTwoRows[1].clone();
@@ -114,9 +127,10 @@ public class Main {
         double[][] lastTwoRows = new double[2][columns];
 
         lastTwoRows[0][0] = 0;
-
+        matrixCounter++;
         for (int i = 1; i < columns; i++) {
             lastTwoRows[0][i] = lastTwoRows[0][i - 1] + scoringFunction(y.charAt(i - 1), INDEL);
+            matrixCounter++;
         }
 
         for (int i = 1; i < rows; i++) {
@@ -129,6 +143,7 @@ public class Main {
                 double yAndIndel = lastTwoRows[1][j - 1] + scoringFunction(yChar, INDEL);
 
                 lastTwoRows[1][j] = max(mScore, xAndIndel, yAndIndel);
+                matrixCounter++;
             }
             lastTwoRows[0] = lastTwoRows[1].clone();
 
