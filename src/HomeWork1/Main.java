@@ -6,21 +6,37 @@ public class Main {
 
     private static final char INDEL = '-';
 
+    private static double maxScore;
+    private static boolean firstRun = true;
+
     public static void main(String[] args) {
         // write your code here
-        String x = "TGTAAATT";
-        String y = "GGTCATTTA";
+        String x = "ATAAGGCATTGACCGTATTGCCAA";
+        String y = "CCCATAGGTGCGGTAGCC";
+
+        // Global
+
+        String[] global = hirschberg(x, y);
+        printSequence(global);
+
+        // Local
 
         Pair<Integer, Integer>[] indices = findStartAndEndIndices(x, y);
         int xStart = indices[0].getKey();
         int xEnd = indices[1].getKey();
         int yStart = indices[0].getValue();
         int yEnd = indices[1].getValue();
-        String[] a = hirschberg(x.substring(xStart, xEnd), y.substring(yStart, yEnd));
-//        String[] b = needlemanWunch(x, y);
-        System.out.println();
+
+        String[] local = hirschberg(x.substring(xStart, xEnd), y.substring(yStart, yEnd));
+        printSequence(local);
     }
 
+    private static void printSequence(String[] global) {
+        for (int i = 0; i < global.length; i++) {
+            System.out.println(global[i]);
+        }
+        System.out.println("Score: " + maxScore);
+    }
 
     public static Pair<Integer, Integer>[] findStartAndEndIndices(String x, String y) {
 
@@ -52,20 +68,20 @@ public class Main {
 
                 if (mScore >= 0 && mScore >= xAndIndel && mScore >= yAndIndel) {
                     lastTwoRows[1][j] = mScore;
-                    startingPoints[1][j] = startingPoints[0][j-1];
+                    startingPoints[1][j] = startingPoints[0][j - 1];
 
-                } else if (xAndIndel  >= 0 && xAndIndel > mScore && xAndIndel > yAndIndel) {
+                } else if (xAndIndel >= 0 && xAndIndel > mScore && xAndIndel > yAndIndel) {
                     lastTwoRows[1][j] = xAndIndel;
                     startingPoints[1][j] = startingPoints[0][j];
-                } else if(yAndIndel >= 0) {
+                } else if (yAndIndel >= 0) {
                     lastTwoRows[1][j] = yAndIndel;
                     startingPoints[1][j] = startingPoints[1][j - 1];
-                }else {
+                } else {
                     lastTwoRows[1][j] = 0;
                     startingPoints[1][j] = new Pair<>(i, j);
                 }
 
-                if(lastTwoRows[1][j] > maxValue) {
+                if (lastTwoRows[1][j] > maxValue) {
                     endIndex = new Pair<>(i, j);
                     maxValue = lastTwoRows[1][j];
                     maxStartingPoint = new Pair<>(startingPoints[1][j].getKey(), startingPoints[1][j].getValue());
@@ -79,10 +95,10 @@ public class Main {
         Pair<Integer, Integer>[] answer = new Pair[2];
         answer[0] = maxStartingPoint;
         answer[1] = endIndex;
+
+        maxScore = maxValue;
         return answer;
     }
-
-
 
     /**
      * @param x - Sequence x
@@ -90,7 +106,7 @@ public class Main {
      * @return Needleman - wounch matrix last rows of values
      */
 
-    public static double[] NWScore(String x, String y) {
+    public static double[] NWScore(String x, String y, boolean firstIteration) {
 
         int columns = y.length() + 1;
         int rows = x.length() + 1;
@@ -118,13 +134,17 @@ public class Main {
 
         }
 
+        if (firstIteration) {
+            maxScore = lastTwoRows[1][columns - 1];
+            firstRun = false;
+        }
         return lastTwoRows[1].clone();
     }
 
     // The alignment itself
 
     public static String[] hirschberg(String x, String y) {
-        String[] alignment = new String[]{"", ""};
+        String[] alignment = new String[] { "", "" };
         // base cases
 
         if (x.length() == 0) {
@@ -146,8 +166,8 @@ public class Main {
             String xStartToMid = x.substring(0, xMid);
             String xMidToEnd = x.substring(xMid);
 
-            double[] scoreL = NWScore(xStartToMid, y);
-            double[] scoreR = NWScore(reverse(xMidToEnd), reverse(y));
+            double[] scoreL = NWScore(xStartToMid, y, firstRun);
+            double[] scoreR = NWScore(reverse(xMidToEnd), reverse(y), firstRun);
 
             int yMid = argMax(scoreL, revArray(scoreR));
             String yStartToMid = y.substring(0, yMid);
@@ -169,7 +189,6 @@ public class Main {
 
         double[][] matrix = new double[rows][columns];
         Pair<Integer, Integer>[][] pMatrix = new Pair[rows][columns];
-
 
         matrix[0][0] = 0;
         pMatrix[0][0] = null;
@@ -218,13 +237,17 @@ public class Main {
             int nextFirstIndex = pointer.getKey();
             int nextSecondIndex = pointer.getValue();
 
-            if (currentFirstIndex - 1 == nextFirstIndex && currentSecondIndex - 1 == nextSecondIndex) { // this is a match / mismatch
+            if (currentFirstIndex - 1 == nextFirstIndex && currentSecondIndex - 1 == nextSecondIndex) { // this is a
+                                                                                                        // match /
+                                                                                                        // mismatch
                 firstSequence = x.charAt(currentFirstIndex - 1) + firstSequence;
                 secondSequence = y.charAt(currentSecondIndex - 1) + secondSequence;
-            } else if (currentFirstIndex == nextFirstIndex && currentSecondIndex - 1 == nextSecondIndex) { // this is an indel
+            } else if (currentFirstIndex == nextFirstIndex && currentSecondIndex - 1 == nextSecondIndex) { // this is an
+                                                                                                           // indel
                 firstSequence = INDEL + firstSequence;
                 secondSequence = y.charAt(currentSecondIndex - 1) + secondSequence;
-            } else if (currentFirstIndex - 1 == nextFirstIndex && currentSecondIndex == nextSecondIndex) { // this is an indel
+            } else if (currentFirstIndex - 1 == nextFirstIndex && currentSecondIndex == nextSecondIndex) { // this is an
+                                                                                                           // indel
                 secondSequence = INDEL + secondSequence;
                 firstSequence = x.charAt(currentFirstIndex - 1) + firstSequence;
             }
@@ -234,7 +257,7 @@ public class Main {
             currentSecondIndex = nextSecondIndex;
         }
 
-        return new String[]{firstSequence, secondSequence};
+        return new String[] { firstSequence, secondSequence };
     }
 
     private static int argMax(double[] scoreL, double[] scoreR) {
@@ -265,7 +288,6 @@ public class Main {
             return -2;
         }
 
-
         return score;
     }
 
@@ -287,10 +309,10 @@ public class Main {
         return arr;
     }
 
-
     public class Tuple<X, Y> {
         public final X x;
         public final Y y;
+
         public Tuple(X x, Y y) {
             this.x = x;
             this.y = y;
